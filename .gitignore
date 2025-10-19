@@ -1,4 +1,5 @@
-istema Operacional
+# ========================
+# Sistema Operacional
 # ========================
 # Windows
 Thumbs.db
@@ -44,13 +45,20 @@ __pycache__/
 *$py.class
 *.pyo
 *.pyd
+*.so
+.Python
 *.pytest_cache/
+
+# Virtual Environment
 .venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # ========================
 # Java
@@ -60,7 +68,6 @@ venv.bak/
 *.war
 *.ear
 *.iml
-*.log
 *.hprof
 *.jks
 target/
@@ -71,7 +78,6 @@ build/
 # ========================
 *.o
 *.obj
-*.so
 *.dll
 *.exe
 *.out
@@ -94,11 +100,25 @@ out/
 
 # Eclipse
 .metadata/
-*.tmp
-*.bak
-*.swp
-*~.nib
 .localhistory/
+
+# ========================
+# Machine Learning
+# ========================
+*.pkl
+*.joblib
+*.h5
+*.model
+
+# Visualizações geradas
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# CSVs temporários
+*_results.csv
+*_output.csv
 
 # ========================
 # Outros
@@ -108,5 +128,3 @@ out/
 *.rar
 *.7z
 *.bak
-*.swp
-

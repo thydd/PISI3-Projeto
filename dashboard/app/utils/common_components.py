@@ -110,7 +110,7 @@ def apply_filters(
 
 
 def slider_component(
-    feature: str, label: str, step: float, feature_ranges: Dict[str, tuple]
+    feature: str, label: str, min_val: float, max_val: float, step: float
 ) -> html.Div:
     """
     Cria um componente de slider para uma feature específica.
@@ -121,17 +121,18 @@ def slider_component(
         Nome da feature.
     label : str
         Label exibido para o usuário.
+    min_val : float
+        Valor mínimo do slider.
+    max_val : float
+        Valor máximo do slider.
     step : float
         Incremento do slider.
-    feature_ranges : Dict[str, tuple]
-        Dicionário com ranges (min, max) de cada feature.
 
     Returns
     -------
     html.Div
         Componente Dash contendo o slider.
     """
-    min_val, max_val = feature_ranges[feature]
     if np.isfinite(min_val) and np.isfinite(max_val):
         value = float(np.clip((min_val + max_val) / 2, min_val, max_val))
     else:

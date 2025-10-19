@@ -31,16 +31,24 @@ from app.config import (
 from app.layouts.audio_dna_tab import create_audio_dna_layout
 from app.layouts.overview_tab import create_overview_layout
 from app.layouts.popularity_tab import create_popularity_layout
+from app.layouts.mood_tempo_tab import create_mood_tempo_layout
+from app.layouts.explorer_tab import create_explorer_layout
+from app.layouts.classification_tab import create_classification_layout
+from app.layouts.clusters_tab import create_clusters_layout
 
 # Importações de callbacks
 from app.callbacks.audio_dna_callbacks import register_audio_dna_callbacks
 from app.callbacks.overview_callbacks import register_overview_callbacks
 from app.callbacks.popularity_callbacks import register_popularity_callbacks
+from app.callbacks.mood_tempo_callbacks import register_mood_tempo_callbacks
+from app.callbacks.explorer_callbacks import register_explorer_callbacks
+from app.callbacks.classification_callbacks import register_classification_callbacks
+from app.callbacks.clusters_callbacks import register_clusters_callbacks
 
 # Importações de utilitários
 from app.utils.common_components import create_range_marks
-from app.utils.data_utils import load_dataset
-from app.utils.model_utils import CLASSIFIER_FEATURES
+from app.utils.data_utils import load_dataset, feature_ranges
+from app.utils.model_utils import CLASSIFIER_FEATURES, CLUSTER_FEATURES, train_classifier_from_df
 
 # ============================================================================
 # CARREGAMENTO DE DADOS E CONFIGURAÇÕES INICIAIS
@@ -66,6 +74,21 @@ else:
     YEAR_MIN = int(_valid_years.min())
     YEAR_MAX = int(_valid_years.max())
 YEAR_MARKS = create_range_marks(YEAR_MIN, YEAR_MAX)
+
+# Configurações de features e modelos ML
+FEATURE_RANGES = feature_ranges(BASE_DF, CLASSIFIER_FEATURES)
+CLASSIFIER_RESULT = train_classifier_from_df(BASE_DF)
+
+# Labels para Key e Mode
+KEY_LABELS = (
+    BASE_DF[["key", "key_name"]]
+    .dropna()
+    .drop_duplicates(subset="key")
+    .set_index("key")
+    .squeeze()
+    .to_dict()
+)
+MODE_LABELS = {0: "Menor", 1: "Maior"}
 
 # ============================================================================
 # INICIALIZAÇÃO DO APLICATIVO DASH
@@ -251,11 +274,38 @@ app.layout = html.Div(
                     selected_style=TAB_SELECTED_STYLE,
                     children=[create_audio_dna_layout(CLASSIFIER_FEATURES)],
                 ),
-                # TODO: Futuras abas serão adicionadas aqui
-                # - Humor & Tempo
-                # - Explorador
-                # - Classificação
-                # - Clusters
+                # Aba: Humor & Tempo
+                dcc.Tab(
+                    label="😊 Humor & Tempo",
+                    value="mood-tempo",
+                    style=TAB_STYLE,
+                    selected_style=TAB_SELECTED_STYLE,
+                    children=[create_mood_tempo_layout(GENRE_OPTIONS)],
+                ),
+                # Aba: Explorador
+                dcc.Tab(
+                    label="🔍 Explorador",
+                    value="explorer",
+                    style=TAB_STYLE,
+                    selected_style=TAB_SELECTED_STYLE,
+                    children=[create_explorer_layout(CLASSIFIER_FEATURES)],
+                ),
+                # Aba: Classificação
+                dcc.Tab(
+                    label="🤖 Classificação",
+                    value="classification",
+                    style=TAB_STYLE,
+                    selected_style=TAB_SELECTED_STYLE,
+                    children=[create_classification_layout(CLASSIFIER_RESULT, CLASSIFIER_FEATURES, FEATURE_RANGES, KEY_LABELS, MODE_LABELS)],
+                ),
+                # Aba: Clusters
+                dcc.Tab(
+                    label="🎯 Clusters",
+                    value="clusters",
+                    style=TAB_STYLE,
+                    selected_style=TAB_SELECTED_STYLE,
+                    children=[create_clusters_layout()],
+                ),
             ],
         ),
         # Rodapé
@@ -346,6 +396,10 @@ def update_radar_genre_options(selected_genres: list[str]):
 register_overview_callbacks(app, BASE_DF, TOTAL_SONGS)
 register_popularity_callbacks(app, BASE_DF)
 register_audio_dna_callbacks(app, BASE_DF, CLASSIFIER_FEATURES)
+register_mood_tempo_callbacks(app, BASE_DF)
+register_explorer_callbacks(app, BASE_DF, CLASSIFIER_FEATURES)
+register_classification_callbacks(app, CLASSIFIER_RESULT, CLASSIFIER_FEATURES)
+register_clusters_callbacks(app, BASE_DF, CLUSTER_FEATURES)
 
 # ============================================================================
 # EXECUÇÃO DO SERVIDOR

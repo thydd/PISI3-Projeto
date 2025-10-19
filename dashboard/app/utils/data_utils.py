@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 
 
-DATASET_PATH = Path(__file__).resolve().parent.parent / "DataSet" / "spotify_songs.csv"
+# Caminho: app/utils/data_utils.py -> sobe 3 níveis -> DataSet/spotify_songs.csv
+DATASET_PATH = Path(__file__).resolve().parent.parent.parent.parent / "DataSet" / "spotify_songs.csv"
 
 
 class DatasetNotFoundError(FileNotFoundError):

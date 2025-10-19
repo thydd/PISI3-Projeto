@@ -1,0 +1,112 @@
+istema Operacional
+# ========================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ========================
+# Logs e arquivos temporários
+# ========================
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# ========================
+# Node.js / JavaScript
+# ========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pytest_cache/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ========================
+# Java
+# ========================
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.log
+*.hprof
+*.jks
+target/
+build/
+
+# ========================
+# C / C++
+# ========================
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.out
+*.a
+*.lib
+
+# ========================
+# IDEs
+# ========================
+# VS Code
+.vscode/
+.history/
+
+# IntelliJ / JetBrains
+*.iml
+.idea/
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.metadata/
+*.tmp
+*.bak
+*.swp
+*~.nib
+.localhistory/
+
+# ========================
+# Outros
+# ========================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.bak
+*.swp
+

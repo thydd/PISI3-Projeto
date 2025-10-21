@@ -400,12 +400,23 @@ def genre_sunburst(df: pd.DataFrame) -> go.Figure:
         .reset_index(name="count")
     )
     
+    # Escala de cores azul-roseada com alto contraste
+    # Todos os tons são vibrantes - nenhum cinza/preto
+    high_contrast_scale = [
+        [0.0, "#3b82f6"],  # Azul vibrante (baixa contagem)
+        [0.2, "#6366f1"],  # Índigo
+        [0.4, "#8b5cf6"],  # Violeta
+        [0.6, "#a855f7"],  # Roxo
+        [0.8, "#d946ef"],  # Fúcsia
+        [1.0, "#ec4899"],  # Rosa vibrante (alta contagem)
+    ]
+    
     fig = px.sunburst(
         hierarchy,
         path=["playlist_genre", "playlist_subgenre"],
         values="count",
         color="count",
-        color_continuous_scale=[[0, ACCENT_SECONDARY], [0.5, ACCENT_PRIMARY], [1, ACCENT_TERTIARY]],
+        color_continuous_scale=high_contrast_scale,
         hover_data={"count": ":,"},
     )
     
@@ -422,7 +433,8 @@ def genre_sunburst(df: pd.DataFrame) -> go.Figure:
     fig.update_traces(
         hovertemplate="<b style='color:#000000'>%{label}</b><br>" +
                      "<span style='color:#000000'>Faixas: %{value:,}</span><extra></extra>",
-        textfont=dict(size=12),
+        textfont=dict(size=13, color="#ffffff", family="Poppins"),  # Texto branco com tamanho aumentado
+        insidetextorientation="radial",  # Orientação radial para melhor legibilidade
     )
     
     return fig

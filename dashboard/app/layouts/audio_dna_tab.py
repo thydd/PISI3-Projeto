@@ -108,40 +108,16 @@ def create_audio_dna_layout(classifier_features: list) -> html.Div:
             html.Div(
                 className="glass-card", children=[dcc.Graph(id="feature-3d-scatter")]
             ),
-            # Correlation Heatmap & Radar
+            # Correlation Heatmap
             html.Div(
                 className="row g-4 mt-4",
                 children=[
                     html.Div(
-                        className="col-xl-6",
+                        className="col-xl-12",
                         children=[
                             html.Div(
                                 className="glass-card",
                                 children=[dcc.Graph(id="correlation-heatmap-graph")],
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        className="col-xl-6",
-                        children=[
-                            html.Div(
-                                className="glass-card p-3 mb-3",
-                                children=[
-                                    html.Label(
-                                        "Gênero para Radar",
-                                        className="form-label text-light",
-                                    ),
-                                    dcc.Dropdown(
-                                        id="radar-genre",
-                                        options=[],  # Será preenchido dinamicamente
-                                        value="Todos",
-                                        className="dash-dropdown",
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                className="glass-card",
-                                children=[dcc.Graph(id="radar-chart-graph")],
                             ),
                         ],
                     ),

@@ -268,7 +268,7 @@ app.layout = html.Div(
                 ),
                 # Aba: Audio DNA
                 dcc.Tab(
-                    label="🧬 Audio DNA",
+                    label="Audio DNA",
                     value="audio-dna",
                     style=TAB_STYLE,
                     selected_style=TAB_SELECTED_STYLE,
@@ -276,7 +276,7 @@ app.layout = html.Div(
                 ),
                 # Aba: Humor & Tempo
                 dcc.Tab(
-                    label="😊 Humor & Tempo",
+                    label="Humor & Tempo",
                     value="mood-tempo",
                     style=TAB_STYLE,
                     selected_style=TAB_SELECTED_STYLE,
@@ -284,7 +284,7 @@ app.layout = html.Div(
                 ),
                 # Aba: Explorador
                 dcc.Tab(
-                    label="🔍 Explorador",
+                    label="Explorador",
                     value="explorer",
                     style=TAB_STYLE,
                     selected_style=TAB_SELECTED_STYLE,
@@ -292,7 +292,7 @@ app.layout = html.Div(
                 ),
                 # Aba: Classificação
                 dcc.Tab(
-                    label="🤖 Classificação",
+                    label="Classificação",
                     value="classification",
                     style=TAB_STYLE,
                     selected_style=TAB_SELECTED_STYLE,
@@ -300,7 +300,7 @@ app.layout = html.Div(
                 ),
                 # Aba: Clusters
                 dcc.Tab(
-                    label="🎯 Clusters",
+                    label="Clusters",
                     value="clusters",
                     style=TAB_STYLE,
                     selected_style=TAB_SELECTED_STYLE,

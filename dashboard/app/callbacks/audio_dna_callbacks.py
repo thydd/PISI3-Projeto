@@ -2,7 +2,7 @@
 Callbacks da aba "Audio DNA".
 
 Gerencia atualizações de visualizações multidimensionais de features de áudio,
-incluindo scatter 3D, heatmap de correlação e gráfico radar.
+incluindo scatter 3D e heatmap de correlação.
 """
 
 from typing import List
@@ -14,7 +14,6 @@ from app.utils.common_components import apply_filters
 from app.utils.visualizations import (
     correlation_heatmap,
     feature_3d_scatter,
-    radar_chart_genre_profile,
 )
 
 
@@ -72,18 +71,3 @@ def register_audio_dna_callbacks(
         """Atualiza heatmap de correlação."""
         filtered_df = apply_filters(base_df, genres, subgenres, popularity, years)
         return correlation_heatmap(filtered_df, classifier_features)
-
-    @app.callback(
-        Output("radar-chart-graph", "figure"),
-        Input("radar-genre", "value"),
-        Input("genre-dropdown", "value"),
-        Input("subgenre-dropdown", "value"),
-        Input("popularity-slider", "value"),
-        Input("year-slider", "value"),
-    )
-    def update_radar_chart(selected_genre, genres, subgenres, popularity, years):
-        """Atualiza gráfico radar para perfil de gênero."""
-        filtered_df = apply_filters(base_df, genres, subgenres, popularity, years)
-        return radar_chart_genre_profile(
-            filtered_df, selected_genre, classifier_features
-        )

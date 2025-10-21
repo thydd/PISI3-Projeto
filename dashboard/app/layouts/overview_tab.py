@@ -78,22 +78,12 @@ def create_overview_layout() -> html.Div:
                 className="row g-4 mt-4",
                 children=[
                     html.Div(
-                        className="col-xl-6",
+                        className="col-xl-12",
                         children=[
                             html.H5("Hierarquia de Gêneros", className="mb-3"),
                             html.Div(
                                 className="glass-card",
                                 children=[dcc.Graph(id="genre-sunburst-graph")],
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        className="col-xl-6",
-                        children=[
-                            html.H5("Distribuição de Popularidade", className="mb-3"),
-                            html.Div(
-                                className="glass-card",
-                                children=[dcc.Graph(id="popularity-violin-graph")],
                             ),
                         ],
                     ),

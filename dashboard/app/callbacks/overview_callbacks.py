@@ -2,7 +2,7 @@
 Callbacks da aba "Visão Geral".
 
 Gerencia atualizações de KPIs, tabelas de dados ausentes, estatísticas descritivas
-e visualizações premium (sunburst, violin, timeline).
+e visualizações premium (sunburst, timeline).
 """
 
 from typing import List
@@ -15,7 +15,6 @@ from app.utils.common_components import apply_filters
 from app.utils.data_utils import compute_kpis, descriptive_stats, missing_values
 from app.utils.visualizations import (
     genre_sunburst,
-    popularity_distribution_violin,
     timeline_release_trend,
 )
 
@@ -145,18 +144,6 @@ def register_overview_callbacks(app, base_df: pd.DataFrame, total_songs: int):
         """Atualiza gráfico sunburst de hierarquia de gêneros."""
         filtered_df = apply_filters(base_df, genres, subgenres, popularity, years)
         return genre_sunburst(filtered_df)
-
-    @app.callback(
-        Output("popularity-violin-graph", "figure"),
-        Input("genre-dropdown", "value"),
-        Input("subgenre-dropdown", "value"),
-        Input("popularity-slider", "value"),
-        Input("year-slider", "value"),
-    )
-    def update_popularity_violin(genres, subgenres, popularity, years):
-        """Atualiza gráfico violin de distribuição de popularidade."""
-        filtered_df = apply_filters(base_df, genres, subgenres, popularity, years)
-        return popularity_distribution_violin(filtered_df)
 
     @app.callback(
         Output("timeline-trend-graph", "figure"),

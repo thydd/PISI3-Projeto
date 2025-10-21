@@ -36,64 +36,16 @@ def create_classification_layout(
     html.Div
         Layout completo da aba.
     """
-    # Calcula acurácia
-    accuracy = classifier_result.accuracy * 100 if classifier_result else 0.0
-
     return html.Div(
         className="p-4",
         children=[
             # Título
-            html.H4("🤖 Machine Learning: Predição de Gênero Musical", className="mb-4 text-light"),
-            # Card de acurácia do modelo
-            html.Div(
-                className="glass-card mb-4",
-                children=[
-                    html.H5("📊 Performance do Modelo", className="mb-3 text-light"),
-                    html.Div(
-                        className="row g-3",
-                        children=[
-                            html.Div(
-                                className="col-md-6",
-                                children=[
-                                    html.Div(
-                                        className="kpi-card",
-                                        children=[
-                                            html.Div(
-                                                className="kpi-label",
-                                                children="Acurácia do Modelo",
-                                            ),
-                                            html.Div(
-                                                className="kpi-value text-info",
-                                                children=f"{accuracy:.1f}%",
-                                            ),
-                                            html.Small(
-                                                "Random Forest Classifier",
-                                                className="text-secondary",
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                className="col-md-6",
-                                children=[
-                                    html.P(
-                                        "Este modelo foi treinado com Random Forest para prever o gênero musical "
-                                        "baseado em 13 audio features. Ajuste os parâmetros abaixo e clique em 'Prever' "
-                                        "para ver a classificação.",
-                                        className="text-secondary mb-0",
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            html.H4("Machine Learning: Predição de Gênero Musical", className="mb-4 text-light"),
             # Playground de predição
             html.Div(
                 className="glass-card mb-4",
                 children=[
-                    html.H5("🎮 Playground Interativo", className="mb-4 text-light"),
+                    html.H5("Playground Interativo", className="mb-4 text-light"),
                     html.P(
                         "Ajuste as audio features abaixo para simular uma música e ver qual gênero o modelo prevê:",
                         className="text-secondary mb-4",

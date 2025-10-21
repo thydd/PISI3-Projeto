@@ -128,6 +128,7 @@ EXTERNAL_STYLESHEETS = [
     "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css"
 ]
 
+# URL do Google Fonts
 GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
 
 DASH_CONFIG = {

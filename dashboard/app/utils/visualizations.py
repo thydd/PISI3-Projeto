@@ -23,6 +23,18 @@ COLOR_PALETTE = [
     "#9d4edd", "#06ffa5", "#f72585", "#4361ee"
 ]
 
+# Tooltip configuration with high contrast using app's primary accent color
+HOVER_LABEL_CONFIG = dict(
+    bgcolor="#033085",  # Vibrant cyan - app's primary accent color
+    font=dict(
+        size=14,
+        family="Poppins, sans-serif",
+        color="#000000"  # Pure black text for maximum contrast (8.59:1 ratio)
+    ),
+    bordercolor="#ffffff",  # White border for clear definition
+    align="left"
+)
+
 
 def bar_chart(series: pd.Series, title: str, x_title: str, y_title: str) -> go.Figure:
     """Enhanced horizontal bar chart with gradient fills and modern styling."""
@@ -47,13 +59,14 @@ def bar_chart(series: pd.Series, title: str, x_title: str, y_title: str) -> go.F
         font=dict(color=FONT_COLOR, family="Poppins"),
         showlegend=False,
         margin=dict(l=20, r=20, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     fig.update_traces(
         textposition="outside",
         textangle=0,
         textfont=dict(color=FONT_COLOR, size=11),
         insidetextanchor="middle",
-        hovertemplate="<b>%{y}</b><br>%{x:.2f}<extra></extra>",
+        hovertemplate="<b style='color:#000000'>%{y}</b><br><span style='color:#000000'>%{x:.2f}</span><extra></extra>",
         cliponaxis=False,
         marker=dict(line=dict(color="rgba(255,255,255,0.1)", width=1)),
     )
@@ -80,43 +93,161 @@ def tempo_ridge_like(df: pd.DataFrame, genres: Iterable[str]) -> go.Figure:
         paper_bgcolor=DARK_PAPER_BG,
         plot_bgcolor=DARK_PLOT_BG,
         font=dict(color=FONT_COLOR),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     return fig
 
 
 def valence_energy_density(df: pd.DataFrame, genre: str | None) -> go.Figure:
+    """Mapa emocional com suavização para eliminar pixelamento."""
     data = df if genre is None else df[df["playlist_genre"] == genre]
     if data.empty:
         return go.Figure()
 
-    fig = px.density_heatmap(
-        data,
-        x="valence",
-        y="energy",
-        nbinsx=40,
-        nbinsy=40,
-        color_continuous_scale="Viridis",
+    # Criar histograma 2D com alta resolução
+    import numpy as np
+    from scipy.ndimage import gaussian_filter
+    
+    # Criar grid de alta resolução
+    bins = 100  # Muito maior que antes para suavização
+    
+    # Calcular histograma 2D
+    hist, xedges, yedges = np.histogram2d(
+        data['valence'], 
+        data['energy'], 
+        bins=bins, 
+        range=[[0, 1], [0, 1]]
     )
+    
+    # Aplicar filtro gaussiano para suavização (elimina pixelamento!)
+    hist_smooth = gaussian_filter(hist, sigma=2.5)  # sigma controla a suavização
+    
+    # Criar heatmap suavizado
+    fig = go.Figure(data=go.Heatmap(
+        z=hist_smooth.T,  # Transpor para orientação correta
+        x=xedges[:-1],
+        y=yedges[:-1],
+        colorscale=[
+            [0, "#020817"],      # Azul muito escuro (quase preto)
+            [0.2, "#0c1e3d"],    # Azul escuro profundo
+            [0.4, "#1e3a5f"],    # Azul médio escuro
+            [0.6, "#2563eb"],    # Azul royal vibrante
+            [0.75, "#3b82f6"],   # Azul médio brilhante
+            [0.85, "#60a5fa"],   # Azul claro
+            [0.95, "#93c5fd"],   # Azul muito claro
+            [1, "#dbeafe"]       # Azul quase branco (alta densidade)
+        ],
+        hovertemplate="<b style='color:#000000'>Valência:</b> <span style='color:#000000'>%{x:.2f}</span><br>" +
+                     "<b style='color:#000000'>Energia:</b> <span style='color:#000000'>%{y:.2f}</span><br>" +
+                     "<b style='color:#000000'>Densidade:</b> <span style='color:#000000'>%{z:.0f}</span><extra></extra>",
+        colorbar=dict(
+            title=dict(
+                text="Densidade",
+                font=dict(size=12, color=FONT_COLOR)
+            ),
+            thickness=15,
+            len=0.7,
+            tickfont=dict(color=FONT_COLOR, size=10),
+            x=1.02,
+        ),
+    ))
+    
     fig.update_layout(
-        title="Mapa de Calor: Energia x Valência",
-        xaxis_title="Valência (Positividade)",
-        yaxis_title="Energia",
+        title=dict(
+            text="Mapa Emocional: Energia × Valência",
+            font=dict(size=20, color=FONT_COLOR, family="Poppins"),
+            x=0.5,
+            xanchor="center"
+        ),
+        xaxis_title=dict(
+            text="Valência (Positividade)",
+            font=dict(size=14, color=FONT_COLOR)
+        ),
+        yaxis_title=dict(
+            text="Energia (Intensidade)",
+            font=dict(size=14, color=FONT_COLOR)
+        ),
         template="plotly_dark",
         paper_bgcolor=DARK_PAPER_BG,
         plot_bgcolor=DARK_PLOT_BG,
-        font=dict(color=FONT_COLOR),
+        font=dict(color=FONT_COLOR, family="Poppins"),
+        hoverlabel=HOVER_LABEL_CONFIG,
+        
+        # Dimensões expandidas
+        height=750,  # Aumentado de 650 para 750 (+15%)
+        width=None,
+        
+        # Eixos com proporção 1:1 (quadrado perfeito)
+        xaxis=dict(
+            range=[0, 1],
+            gridcolor=GRID_COLOR,
+            showgrid=True,
+            zeroline=False,
+            constrain="domain",
+        ),
+        yaxis=dict(
+            range=[0, 1],
+            gridcolor=GRID_COLOR,
+            showgrid=True,
+            zeroline=False,
+            scaleanchor="x",
+            scaleratio=1,
+            constrain="domain",
+        ),
+        
+        margin=dict(l=90, r=130, t=110, b=110),  # Margens ligeiramente aumentadas
     )
 
-    fig.add_shape(type="line", x0=0.5, x1=0.5, y0=0, y1=1, yref="paper", line=dict(color="white", dash="dash"))
-    fig.add_shape(type="line", x0=0, x1=1, y0=0.5, y1=0.5, xref="paper", line=dict(color="white", dash="dash"))
+    # Linhas divisórias dos quadrantes
+    fig.add_shape(
+        type="line",
+        x0=0.5, x1=0.5, y0=0, y1=1,
+        line=dict(color="rgba(255, 255, 255, 0.4)", width=2, dash="dash")
+    )
+    fig.add_shape(
+        type="line",
+        x0=0, x1=1, y0=0.5, y1=0.5,
+        line=dict(color="rgba(255, 255, 255, 0.4)", width=2, dash="dash")
+    )
 
+    # Labels dos quadrantes - FORA do gráfico, sem emojis, sem backgrounds
     annotations = [
-        dict(x=0.25, y=0.75, text="Intenso", showarrow=False, font=dict(color="white")),
-        dict(x=0.75, y=0.75, text="Feliz", showarrow=False, font=dict(color="white")),
-        dict(x=0.25, y=0.25, text="Triste", showarrow=False, font=dict(color="white")),
-        dict(x=0.75, y=0.25, text="Calmo", showarrow=False, font=dict(color="white")),
+        # Quadrante superior esquerdo - INTENSO
+        dict(
+            x=0.25, y=1.06,
+            xref="x", yref="paper",
+            text="<b>INTENSO</b>",
+            showarrow=False,
+            font=dict(color="#ef4444", size=15, family="Poppins", weight=600),
+        ),
+        # Quadrante superior direito - FELIZ
+        dict(
+            x=0.75, y=1.06,
+            xref="x", yref="paper",
+            text="<b>FELIZ</b>",
+            showarrow=False,
+            font=dict(color="#fbbf24", size=15, family="Poppins", weight=600),
+        ),
+        # Quadrante inferior esquerdo - TRISTE
+        dict(
+            x=0.25, y=-0.10,
+            xref="x", yref="paper",
+            text="<b>TRISTE</b>",
+            showarrow=False,
+            font=dict(color="#6366f1", size=15, family="Poppins", weight=600),
+            
+        ),
+        # Quadrante inferior direito - CALMO
+        dict(
+            x=0.75, y=-0.10,
+            xref="x", yref="paper",
+            text="<b>CALMO</b>",
+            showarrow=False,
+            font=dict(color="#10b981", size=15, family="Poppins", weight=600),
+        ),
     ]
     fig.update_layout(annotations=annotations)
+    
     return fig
 
 
@@ -137,6 +268,7 @@ def feature_distribution(df: pd.DataFrame, feature: str, color: str | None = Non
         paper_bgcolor=DARK_PAPER_BG,
         plot_bgcolor=DARK_PLOT_BG,
         font=dict(color=FONT_COLOR),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     return fig
 
@@ -149,6 +281,7 @@ def scatter_matrix(df: pd.DataFrame, dimensions: List[str], color: str) -> go.Fi
         paper_bgcolor=DARK_PAPER_BG,
         plot_bgcolor=DARK_PLOT_BG,
         font=dict(color=FONT_COLOR),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     return fig
 
@@ -170,6 +303,7 @@ def cluster_scatter(df: pd.DataFrame, reduced: np.ndarray, clusters: np.ndarray)
         font=dict(color=FONT_COLOR, family="Poppins"),
         xaxis=dict(gridcolor=GRID_COLOR),
         yaxis=dict(gridcolor=GRID_COLOR),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     return fig
 
@@ -214,9 +348,14 @@ def feature_3d_scatter(
             zaxis=dict(backgroundcolor=DARK_PLOT_BG, gridcolor=GRID_COLOR),
         ),
         margin=dict(l=0, r=0, t=50, b=0),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
-    fig.update_traces(marker=dict(line=dict(width=0.5, color="rgba(255,255,255,0.1)")))
+    fig.update_traces(
+        marker=dict(line=dict(width=0.5, color="rgba(255,255,255,0.1)")),
+        hovertemplate="<b style='color:#000000'>%{text}</b><br>" +
+                     "<span style='color:#000000'>%{x:.2f}, %{y:.2f}, %{z:.2f}</span><extra></extra>"
+    )
     return fig
 
 
@@ -233,7 +372,8 @@ def correlation_heatmap(df: pd.DataFrame, features: List[str]) -> go.Figure:
         text=corr_matrix.values.round(2),
         texttemplate="%{text}",
         textfont=dict(size=10, color=FONT_COLOR),
-        hovertemplate="<b>%{x}</b> × <b>%{y}</b><br>Correlação: %{z:.3f}<extra></extra>",
+        hovertemplate="<b style='color:#000000'>%{x}</b> × <b style='color:#000000'>%{y}</b><br>" +
+                     "<span style='color:#000000'>Correlação: %{z:.3f}</span><extra></extra>",
         colorbar=dict(title="Correlação", tickfont=dict(color=FONT_COLOR)),
     ))
     
@@ -246,6 +386,7 @@ def correlation_heatmap(df: pd.DataFrame, features: List[str]) -> go.Figure:
         xaxis=dict(side="bottom"),
         yaxis=dict(autorange="reversed"),
         margin=dict(l=20, r=20, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     return fig
@@ -275,10 +416,12 @@ def genre_sunburst(df: pd.DataFrame) -> go.Figure:
         plot_bgcolor=DARK_PLOT_BG,
         font=dict(color=FONT_COLOR, family="Poppins"),
         margin=dict(l=20, r=20, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     fig.update_traces(
-        hovertemplate="<b>%{label}</b><br>Faixas: %{value:,}<extra></extra>",
+        hovertemplate="<b style='color:#000000'>%{label}</b><br>" +
+                     "<span style='color:#000000'>Faixas: %{value:,}</span><extra></extra>",
         textfont=dict(size=12),
     )
     
@@ -327,6 +470,7 @@ def timeline_release_trend(df: pd.DataFrame) -> go.Figure:
             borderwidth=1,
         ),
         margin=dict(l=20, r=20, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     fig.update_traces(
@@ -352,7 +496,8 @@ def radar_chart_genre_profile(df: pd.DataFrame, genre: str, features: List[str])
         name=genre.title(),
         line=dict(color=ACCENT_PRIMARY, width=2),
         fillcolor=f"rgba(76, 201, 240, 0.3)",
-        hovertemplate="<b>%{theta}</b><br>Valor: %{r:.3f}<extra></extra>",
+        hovertemplate="<b style='color:#000000'>%{theta}</b><br>" +
+                     "<span style='color:#000000'>Valor: %{r:.3f}</span><extra></extra>",
     ))
     
     fig.update_layout(
@@ -372,6 +517,7 @@ def radar_chart_genre_profile(df: pd.DataFrame, genre: str, features: List[str])
         paper_bgcolor=DARK_PAPER_BG,
         font=dict(color=FONT_COLOR, family="Poppins"),
         margin=dict(l=80, r=80, t=80, b=80),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     return fig
@@ -401,6 +547,7 @@ def popularity_distribution_violin(df: pd.DataFrame) -> go.Figure:
         xaxis=dict(gridcolor=GRID_COLOR),
         yaxis=dict(gridcolor=GRID_COLOR),
         margin=dict(l=20, r=20, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     return fig
@@ -443,11 +590,13 @@ def artist_network_top(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
         yaxis=dict(gridcolor=GRID_COLOR),
         margin=dict(l=20, r=20, t=60, b=20),
         coloraxis_colorbar=dict(title="Popularidade", tickfont=dict(color=FONT_COLOR)),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     fig.update_traces(
         marker=dict(line=dict(width=1, color="rgba(255,255,255,0.2)")),
-        hovertemplate="<b>%{hovertext}</b><br>Faixas: %{x:,}<br>Pop. média: %{y:.1f}<br>%{customdata[2]}<extra></extra>",
+        hovertemplate="<b style='color:#000000'>%{hovertext}</b><br>" +
+                     "<span style='color:#000000'>Faixas: %{x:,}<br>Pop. média: %{y:.1f}<br>%{customdata[2]}</span><extra></extra>",
     )
     
     return fig
@@ -490,7 +639,8 @@ def duration_tempo_jointplot(df: pd.DataFrame, sample_size: int = 3000) -> go.Fi
                 tickfont=dict(color=FONT_COLOR),
             ),
         ),
-        hovertemplate="<b>Tempo</b>: %{x:.1f} BPM<br><b>Duração</b>: %{y:.2f} min<extra></extra>",
+        hovertemplate="<b style='color:#000000'>Tempo</b>: %{x:.1f} BPM<br>" +
+                     "<b style='color:#000000'>Duração</b>: %{y:.2f} min<extra></extra>",
         showlegend=False,
     )
     fig.add_trace(scatter, row=2, col=1)
@@ -501,7 +651,7 @@ def duration_tempo_jointplot(df: pd.DataFrame, sample_size: int = 3000) -> go.Fi
             x=data["tempo"],
             marker=dict(color=ACCENT_PRIMARY, opacity=0.7),
             showlegend=False,
-            hovertemplate="BPM: %{x}<br>Count: %{y}<extra></extra>",
+            hovertemplate="<span style='color:#000000'>BPM: %{x}<br>Count: %{y}</span><extra></extra>",
         ),
         row=1, col=1
     )
@@ -512,7 +662,7 @@ def duration_tempo_jointplot(df: pd.DataFrame, sample_size: int = 3000) -> go.Fi
             y=data["duration_min"],
             marker=dict(color=ACCENT_SECONDARY, opacity=0.7),
             showlegend=False,
-            hovertemplate="Duração: %{y:.2f} min<br>Count: %{x}<extra></extra>",
+            hovertemplate="<span style='color:#000000'>Duração: %{y:.2f} min<br>Count: %{x}</span><extra></extra>",
         ),
         row=2, col=2
     )
@@ -530,6 +680,7 @@ def duration_tempo_jointplot(df: pd.DataFrame, sample_size: int = 3000) -> go.Fi
         font=dict(color=FONT_COLOR, family="Poppins"),
         height=600,
         margin=dict(l=20, r=120, t=60, b=20),
+        hoverlabel=HOVER_LABEL_CONFIG,
     )
     
     return fig

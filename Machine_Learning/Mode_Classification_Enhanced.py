@@ -364,20 +364,42 @@ else:
 # ============================================
 print("\n📊 Gerando Plot 1: Feature Importance Global (Bar Plot)...")
 
-plt.figure(figsize=(12, 8))
+# Configurar estilo: Fundo PRETO, Texto BRANCO
+plt.style.use('default')
+fig, ax = plt.subplots(figsize=(12, 8), facecolor='#1a1a1a')
+
 shap.summary_plot(
     shap_values_for_summary, 
     X_test_sample,
     feature_names=audio_features,
     plot_type="bar",
-    show=False
+    show=False,
+    color='#FF6B6B'
 )
+
+# Customizar cores: BRANCO sobre PRETO
+ax = plt.gca()
+ax.set_facecolor('#1a1a1a')
+ax.tick_params(colors='white', which='both')
+ax.spines['bottom'].set_color('white')
+ax.spines['left'].set_color('white')
+ax.spines['top'].set_color('white')
+ax.spines['right'].set_color('white')
+ax.xaxis.label.set_color('white')
+ax.yaxis.label.set_color('white')
+
+# Labels e ticks brancos
+for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_color('white')
+    label.set_fontsize(11)
+    label.set_fontweight('bold')
+
 plt.title('SHAP - Importância Global das Features (Mode Classification)', 
-          fontsize=16, fontweight='bold', pad=20)
-plt.xlabel('Impacto Médio no Output do Modelo (|SHAP value|)', fontsize=12)
+          fontsize=16, fontweight='bold', pad=20, color='white')
+plt.xlabel('Impacto Médio no Output do Modelo (|SHAP value|)', fontsize=12, color='white')
 plt.tight_layout()
 plot1_path = plots_dir / f'shap_feature_importance_{timestamp}.png'
-plt.savefig(plot1_path, dpi=300, bbox_inches='tight', facecolor='#1a1a1a')
+plt.savefig(plot1_path, dpi=300, bbox_inches='tight', facecolor='#1a1a1a', edgecolor='none')
 plt.close()
 print(f"   ✓ Salvo: {plot1_path.name}")
 
@@ -386,19 +408,40 @@ print(f"   ✓ Salvo: {plot1_path.name}")
 # ============================================
 print("\n📊 Gerando Plot 2: Beeswarm Plot (Densidade)...")
 
-plt.figure(figsize=(12, 8))
+# Configurar estilo: Fundo PRETO, Texto BRANCO
+plt.style.use('default')
+fig, ax = plt.subplots(figsize=(12, 8), facecolor='#1a1a1a')
+
 shap.summary_plot(
     shap_values_for_summary,
     X_test_sample,
     feature_names=audio_features,
     show=False
 )
+
+# Customizar cores: BRANCO sobre PRETO
+ax = plt.gca()
+ax.set_facecolor('#1a1a1a')
+ax.tick_params(colors='white', which='both')
+ax.spines['bottom'].set_color('white')
+ax.spines['left'].set_color('white')
+ax.spines['top'].set_color('white')
+ax.spines['right'].set_color('white')
+ax.xaxis.label.set_color('white')
+ax.yaxis.label.set_color('white')
+
+# Labels e ticks brancos
+for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_color('white')
+    label.set_fontsize(11)
+    label.set_fontweight('bold')
+
 plt.title('SHAP - Beeswarm Plot: Impacto das Features por Valor', 
-          fontsize=16, fontweight='bold', pad=20)
-plt.xlabel('SHAP Value (Impacto na Predição)', fontsize=12)
+          fontsize=16, fontweight='bold', pad=20, color='white')
+plt.xlabel('SHAP Value (Impacto na Predição)', fontsize=12, color='white')
 plt.tight_layout()
 plot2_path = plots_dir / f'shap_beeswarm_{timestamp}.png'
-plt.savefig(plot2_path, dpi=300, bbox_inches='tight', facecolor='#1a1a1a')
+plt.savefig(plot2_path, dpi=300, bbox_inches='tight', facecolor='#1a1a1a', edgecolor='none')
 plt.close()
 print(f"   ✓ Salvo: {plot2_path.name}")
 
@@ -423,9 +466,14 @@ else:
 
 print(f"   → Usando shap_values com shape: {shap_values_class1.shape}")
 
-# Waterfall plot para classe Menor (0) - MUITO MAIS LEGÍVEL
-fig, ax = plt.subplots(figsize=(12, 8), dpi=100)
+# Waterfall plot para classe Menor (0) - Fundo BRANCO, Texto PRETO
+plt.style.use('default')
+fig, ax = plt.subplots(figsize=(12, 8), dpi=100, facecolor='white')
 plt.rcParams['font.size'] = 11
+plt.rcParams['text.color'] = 'black'
+plt.rcParams['axes.labelcolor'] = 'black'
+plt.rcParams['xtick.color'] = 'black'
+plt.rcParams['ytick.color'] = 'black'
 
 # Criar objeto Explanation para waterfall
 if isinstance(explainer.expected_value, np.ndarray):
@@ -442,17 +490,38 @@ explanation_menor = shap.Explanation(
 )
 
 shap.plots.waterfall(explanation_menor, max_display=12, show=False)
+
+# Customizar fundo branco e texto preto
+ax = plt.gca()
+ax.set_facecolor('white')
+fig.patch.set_facecolor('white')
+
+# Customizar cores dos spines e ticks para PRETO
+for spine in ax.spines.values():
+    spine.set_color('black')
+ax.tick_params(colors='black', which='both')
+
+# Labels pretos e em negrito
+for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_color('black')
+    label.set_fontweight('bold')
+
 plt.title(f'SHAP Waterfall - Mode Menor (Real: {valor_real_menor})', 
-          fontsize=14, fontweight='bold', pad=15)
+          fontsize=14, fontweight='bold', pad=15, color='black')
 plt.tight_layout()
 plot3a_path = plots_dir / f'shap_waterfall_menor_{timestamp}.png'
-plt.savefig(plot3a_path, dpi=100, bbox_inches='tight', facecolor='white')
+plt.savefig(plot3a_path, dpi=100, bbox_inches='tight', facecolor='white', edgecolor='none')
 plt.close()
 print(f"   ✓ Salvo: {plot3a_path.name}")
 
-# Waterfall plot para classe Maior (1)
-fig, ax = plt.subplots(figsize=(12, 8), dpi=100)
+# Waterfall plot para classe Maior (1) - Fundo BRANCO, Texto PRETO
+plt.style.use('default')
+fig, ax = plt.subplots(figsize=(12, 8), dpi=100, facecolor='white')
 plt.rcParams['font.size'] = 11
+plt.rcParams['text.color'] = 'black'
+plt.rcParams['axes.labelcolor'] = 'black'
+plt.rcParams['xtick.color'] = 'black'
+plt.rcParams['ytick.color'] = 'black'
 
 explanation_maior = shap.Explanation(
     values=shap_values_class1[idx_maior],
@@ -462,11 +531,27 @@ explanation_maior = shap.Explanation(
 )
 
 shap.plots.waterfall(explanation_maior, max_display=12, show=False)
+
+# Customizar fundo branco e texto preto
+ax = plt.gca()
+ax.set_facecolor('white')
+fig.patch.set_facecolor('white')
+
+# Customizar cores dos spines e ticks para PRETO
+for spine in ax.spines.values():
+    spine.set_color('black')
+ax.tick_params(colors='black', which='both')
+
+# Labels pretos e em negrito
+for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_color('black')
+    label.set_fontweight('bold')
+
 plt.title(f'SHAP Waterfall - Mode Maior (Real: {valor_real_maior})', 
-          fontsize=14, fontweight='bold', pad=15)
+          fontsize=14, fontweight='bold', pad=15, color='black')
 plt.tight_layout()
 plot3b_path = plots_dir / f'shap_waterfall_maior_{timestamp}.png'
-plt.savefig(plot3b_path, dpi=100, bbox_inches='tight', facecolor='white')
+plt.savefig(plot3b_path, dpi=100, bbox_inches='tight', facecolor='white', edgecolor='none')
 plt.close()
 print(f"   ✓ Salvo: {plot3b_path.name}")
 

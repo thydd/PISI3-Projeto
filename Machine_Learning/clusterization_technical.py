@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, silhouette_samples
 
 def carregar_dados(caminho_dataset="../DataSet/spotify_songs.csv"):
     """
@@ -50,25 +51,68 @@ def preprocessar_dados(df_features):
 
 def escolher_numero_clusters(dados_normalizados, max_clusters=10):
     """
-    Método do Cotovelo (Elbow Method) para determinar número ótimo de clusters.
+    Aplica dois métodos para determinar o número ótimo de clusters:
+    1. Método do Cotovelo (Elbow Method) - minimiza WCSS (inércia)
+    2. Método da Silhueta (Silhouette Method) - maximiza coesão e separação dos clusters
+    
+    O Silhouette Score varia de -1 a 1:
+    - Próximo de 1: clusters bem definidos e separados
+    - Próximo de 0: clusters sobrepostos
+    - Negativo: pontos podem estar no cluster errado
     """
-    print("\n[*] Calculando WCSS para o método do cotovelo...")
+    print("\n[*] Calculando métricas para escolha do número de clusters...")
     wcss = []
+    silhouette_scores = []
+    
     for i in range(1, max_clusters + 1):
         km = KMeans(n_clusters=i, init='k-means++', random_state=42, n_init=10)
         km.fit(dados_normalizados)
         wcss.append(km.inertia_)
-        print(f"    K={i}: WCSS={km.inertia_:.2f}")
+        
+        # Silhouette score só funciona com 2+ clusters
+        if i > 1:
+            score = silhouette_score(dados_normalizados, km.labels_)
+            silhouette_scores.append(score)
+            print(f"    K={i}: WCSS={km.inertia_:.2f}, Silhouette={score:.4f}")
+        else:
+            silhouette_scores.append(0)
+            print(f"    K={i}: WCSS={km.inertia_:.2f}")
     
-    plt.figure(figsize=(10,6))
-    plt.plot(range(1, max_clusters + 1), wcss, marker='o', linewidth=2, markersize=8)
-    plt.xlabel("Número de clusters", fontsize=12)
-    plt.ylabel("WCSS (Inércia)", fontsize=12)
-    plt.title("Método do Cotovelo - Clusterização Técnica\n(Features de Produção Musical)", fontsize=14, fontweight='bold')
-    plt.grid(True, alpha=0.3)
-    plt.xticks(range(1, max_clusters + 1))
+    # Criar figura com 2 subplots lado a lado
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Plot 1: Método do Cotovelo
+    ax1.plot(range(1, max_clusters + 1), wcss, marker='o', linewidth=2, markersize=8, color='steelblue')
+    ax1.set_xlabel("Número de clusters", fontsize=12)
+    ax1.set_ylabel("WCSS (Inércia)", fontsize=12)
+    ax1.set_title("Método do Cotovelo - Clusterização Técnica\n(Menor WCSS = Melhor)", fontsize=13, fontweight='bold')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xticks(range(1, max_clusters + 1))
+    
+    # Plot 2: Método da Silhueta
+    ax2.plot(range(1, max_clusters + 1), silhouette_scores, marker='s', linewidth=2, markersize=8, color='coral')
+    ax2.set_xlabel("Número de clusters", fontsize=12)
+    ax2.set_ylabel("Silhouette Score", fontsize=12)
+    ax2.set_title("Método da Silhueta\n(Maior Score = Melhor, ideal > 0.5)", fontsize=13, fontweight='bold')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_xticks(range(1, max_clusters + 1))
+    ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5, label='Linha zero')
+    ax2.axhline(y=0.5, color='green', linestyle='--', alpha=0.5, label='Threshold ideal')
+    
+    # Destacar o melhor score de silhueta
+    if len(silhouette_scores) > 1:
+        best_k = np.argmax(silhouette_scores[1:]) + 2
+        best_score = silhouette_scores[best_k - 1]
+        ax2.scatter([best_k], [best_score], c='red', s=200, marker='*', 
+                   edgecolors='black', linewidths=2, zorder=5, label=f'Melhor K={best_k}')
+        ax2.legend(fontsize=10)
+    
     plt.tight_layout()
+    plt.savefig('metricas_clusters_tecnicos.png', dpi=300, bbox_inches='tight')
+    print("\n[+] Gráficos de métricas salvos em 'metricas_clusters_tecnicos.png'")
     plt.show()
+    
+    return silhouette_scores
 
 def aplicar_kmeans(dados_normalizados, n_clusters=4):
     """
@@ -270,15 +314,18 @@ def main():
     # Normalização
     dados_normalizados, scaler = preprocessar_dados(df_features)
 
-    # Método do cotovelo
-    escolher_numero_clusters(dados_normalizados, max_clusters=10)
+    # Métodos do Cotovelo e Silhueta para escolha ótima
+    silhouette_scores = escolher_numero_clusters(dados_normalizados, max_clusters=13)
     
-    # Baseado na análise do cotovelo, escolher número de clusters
-    # Para características técnicas, 4 clusters costuma ser ideal:
-    # 1. Músicas instrumentais longas
-    # 2. Músicas vocais de estúdio
-    # 3. Gravações ao vivo
-    # 4. Conteúdo falado (rap/hip-hop)
+    # Sugestão automática baseada no melhor silhouette score
+    best_k = np.argmax(silhouette_scores[1:]) + 2
+    print(f"\n[*] Sugestão baseada no Silhouette Score: {best_k} clusters")
+    print("[*] Interpretação teórica para características técnicas:")
+    print("    - 4 clusters: Instrumentais / Vocais / Ao vivo / Falado (rap/podcast)")
+    print("    - 3 clusters: Instrumentais / Vocais de estúdio / Performance ao vivo")
+    print("\n[*] Após analisar ambos os gráficos, escolha o número ideal.")
+    
+    # Baseado na análise combinada dos métodos
     n_clusters = 4
 
     # K-Means++

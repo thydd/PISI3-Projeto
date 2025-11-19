@@ -81,14 +81,12 @@ else:
 
 # 2. Engenharia de Features
 df['release_year'] = pd.to_datetime(df['track_album_release_date'], errors='coerce').dt.year.fillna(0).astype(int)
-subgenre_encoder = LabelEncoder()
-df['subgenre_encoded'] = subgenre_encoder.fit_transform(df['playlist_subgenre'])
 
 # 3. Selecionar features e alvo
 features = [
     'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness',
     'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
-    'duration_ms', 'track_popularity', 'release_year', 'subgenre_encoded'
+    'duration_ms', 'track_popularity', 'release_year'
 ]
 X = df[features]
 y = df['playlist_genre']
@@ -246,20 +244,154 @@ print(f"[*] SHAP calculado em {duracao_shap:.1f}s")
 # ============================================
 
 print("\n=== Explicações Globais ===")
-print("Plotando importância das features por classe (Beeswarm)...")
+print("Plotando importância global das features (único gradiente SHAP)...")
 
 try:
-    # 11.1 Beeswarm Plot
+    # 1. Recuperar valores originais (não escalonados) das features para colorir o plot
+    sample_indices = X_test_sample.index.tolist()
+    X_sample_original = X.loc[sample_indices, features].copy().reset_index(drop=True)
+
+    # 2. Processar valores SHAP baseado no formato retornado pelo TreeExplainer
+    shap_array = np.array(shap_values)
+    
+    # Identificar formato: (n_samples, n_features, n_classes) ou lista de (n_samples, n_features)
+    if shap_array.ndim == 3:
+        # Formato: (n_samples, n_features, n_classes)
+        # Precisamos agregar através das classes (último eixo)
+        n_samples, n_features_shap, n_classes = shap_array.shape
+        
+        if n_features_shap == len(features):
+            # Caso 1: shape correto (samples, features, classes)
+            shap_matrix = np.mean(shap_array, axis=2)  # média através das classes
+        elif n_classes == len(features):
+            # Caso 2: shape invertido (samples, classes, features) - precisa transpor
+            shap_matrix = np.mean(shap_array, axis=1)  # média através das classes
+        else:
+            raise ValueError(f"Shape inesperado: {shap_array.shape}. Esperado features={len(features)}")
+    
+    elif isinstance(shap_values, list):
+        # Lista de arrays, um por classe: [(n_samples, n_features), ...]
+        shap_matrix = np.mean(np.array(shap_values), axis=0)
+    else:
+        # Já é 2D
+        shap_matrix = shap_array
+
+    # 3. Validação final
+    if shap_matrix.shape != (len(sample_indices), len(features)):
+        raise ValueError(
+            f"Shape incompatível após processamento: {shap_matrix.shape}. "
+            f"Esperado: ({len(sample_indices)}, {len(features)})"
+        )
+
+    # 4. Ordenar features por importância (magnitude absoluta média)
+    mean_abs_importance = np.mean(np.abs(shap_matrix), axis=0)
+    sorted_indices = np.argsort(mean_abs_importance)[::-1]
+    sorted_feature_names = [features[i] for i in sorted_indices]
+
+    # 5. Reordenar dados
+    shap_matrix_sorted = shap_matrix[:, sorted_indices]
+    X_sample_sorted = X_sample_original.iloc[:, sorted_indices].copy()
+    X_sample_sorted.columns = sorted_feature_names
+
+    # 6. Criar gráfico SHAP usando API antiga (mais estável)
+    from matplotlib.colors import LinearSegmentedColormap
+    cmap = LinearSegmentedColormap.from_list('blue_red', ['#0D3B66', '#4A90E2', '#F39C12', '#900C3F'])
+    
+    # Usar shap.summary_plot tradicional (compatível com todas as versões)
     shap.summary_plot(
-        shap_values,
-        X_test_sample,
-        class_names=class_names,
-        show=False 
+        shap_matrix_sorted,
+        X_sample_sorted,
+        max_display=15,
+        show=False,
+        cmap=cmap
     )
-    plt.gcf().suptitle("SHAP: Importância e Impacto Global das Features (Beeswarm)", fontsize=10)
+
+    # 7. Personalizar figura e ajustar tamanho dos pontos
+    fig = plt.gcf()
+    fig.set_size_inches(12, 10)  # Aumentei a altura de 8 para 10 para mais espaçamento
+    ax = plt.gca()
+    
+    # Ajustar tamanho dos pontos manualmente
+    for collection in ax.collections:
+        collection.set_sizes([50])  # Reduzido de 80 para 50
+        collection.set_alpha(0.8)   # Transparência
+
+    ax.axvline(0.0, color='#888888', linewidth=0.8, linestyle='--', alpha=0.7, zorder=1)
+    ax.set_title("SHAP Summary Plot - Importância Global das Features", 
+                fontsize=16, fontweight='bold', pad=16)
+    ax.set_xlabel("SHAP value (impact on model output)", fontsize=13, labelpad=10)
+    
+    # Aumentar tamanho dos nomes das features no eixo Y
+    ax.tick_params(axis='y', labelsize=12)  # Aumentado de padrão (~10) para 12
+    
+    # Aumentar espaçamento entre features (ajustar ylim)
+    ylim = ax.get_ylim()
+    ax.set_ylim(ylim[0] - 0.8, ylim[1] + 0.8)  # Aumentei as margens de 0.5 para 0.8
+
+    # Centralizar eixo X com análise de distribuição
+    # Calcular percentis para identificar outliers e definir limites adequados
+    shap_flat = shap_matrix_sorted.flatten()
+    p1 = np.percentile(shap_flat, 1)   # Percentil 1%
+    p99 = np.percentile(shap_flat, 99) # Percentil 99%
+    p5 = np.percentile(shap_flat, 5)   # Percentil 5%
+    p95 = np.percentile(shap_flat, 95) # Percentil 95%
+    
+    # Opção 1: Usar percentis 1-99 (captura 98% dos dados, remove outliers extremos)
+    # max_abs_x = max(abs(p1), abs(p99))
+    
+    # Opção 2: Usar percentis 5-95 (captura 90% dos dados, mais conservador)
+    # max_abs_x = max(abs(p5), abs(p95))
+    
+    # Opção 3: Usar máximo absoluto real (mostra todos os dados)
+    max_abs_x = max(abs(shap_flat.min()), abs(shap_flat.max()))
+    
+    # Opção 4: Híbrido - usar percentil 99 se outliers forem muito extremos
+    p99_val = max(abs(p1), abs(p99))
+    max_val = max(abs(shap_flat.min()), abs(shap_flat.max()))
+    
+    # Se o máximo for muito maior que p99 (outliers extremos), usar p99
+    if max_val > p99_val * 2:
+        max_abs_x = p99_val * 1.1  # Usa percentil 99 com margem
+        print(f"[INFO] Outliers detectados. Usando percentil 99 para limites: ±{max_abs_x:.3f}")
+    else:
+        max_abs_x = max_val * 1.05  # Usa máximo com margem pequena
+        print(f"[INFO] Distribuição regular. Usando máximo absoluto: ±{max_abs_x:.3f}")
+    
+    # Estatísticas para o usuário decidir
+    print(f"\n=== Análise do Eixo X (SHAP values) ===")
+    print(f"Mínimo: {shap_flat.min():.4f}")
+    print(f"Máximo: {shap_flat.max():.4f}")
+    print(f"Percentil 1%:  {p1:.4f}")
+    print(f"Percentil 5%:  {p5:.4f}")
+    print(f"Percentil 95%: {p95:.4f}")
+    print(f"Percentil 99%: {p99:.4f}")
+    print(f"Mediana: {np.median(shap_flat):.4f}")
+    print(f"Desvio padrão: {np.std(shap_flat):.4f}")
+    print(f"\n💡 Sugestões de limites do eixo X:")
+    print(f"   - Conservador (95% dados):   ±{max(abs(p5), abs(p95)):.3f}")
+    print(f"   - Balanceado (98% dados):    ±{max(abs(p1), abs(p99)):.3f}")
+    print(f"   - Completo (100% dados):     ±{max(abs(shap_flat.min()), abs(shap_flat.max())):.3f}")
+    print(f"   - Usado atualmente:          ±{max_abs_x:.3f}\n")
+    
+    if max_abs_x > 0:
+        ax.set_xlim(-max_abs_x, max_abs_x)
+
+    # Customizar colorbar
+    for extra_ax in fig.axes:
+        if extra_ax is not ax:
+            try:
+                extra_ax.set_ylabel("Feature value", fontsize=11)
+                extra_ax.yaxis.set_label_position("right")
+                extra_ax.yaxis.tick_right()
+            except Exception:
+                pass
+
+    plt.tight_layout()
     plt.show()
+    print("✓ Plotagem SHAP global concluída com sucesso.")
 
     # 11.2 Feature Importance Plot (Barras Multiclasse)
+    print("\nPlotando importância média por classe (Barras)...")
     shap.summary_plot(
         shap_values,
         X_test_sample,
@@ -267,11 +399,14 @@ try:
         class_names=class_names,
         show=False
     )
-    plt.gcf().suptitle("SHAP: Importância Média (Magnitude)", fontsize=10)
+    plt.gcf().suptitle("SHAP: Importância Média por Classe (Magnitude)", fontsize=12)
+    plt.tight_layout()
     plt.show()
 
 except Exception as e:
     print(f"Erro ao gerar plots globais do SHAP (Beeswarm/Barra): {e}")
+    import traceback
+    traceback.print_exc()
 
 
 # ============================================
